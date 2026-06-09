@@ -235,7 +235,9 @@ export function App(): JSX.Element {
 
 function formatFullIdentity(id: Identity): string {
   return [
-    `Name: ${id.title} ${id.fullName}`,
+    `Name: ${id.fullName}`,
+    `First name: ${id.firstName}`,
+    `Last name: ${id.lastName}`,
     `Gender: ${id.gender}`,
     `Email: ${id.email}`,
     `Phone: ${id.phone}`,

@@ -38,7 +38,7 @@ export function generate(
   options: GenerateOptions
 ): Identity {
   const gender: Gender = options.gender ?? (Math.random() < 0.5 ? "male" : "female");
-  const { firstName, lastName, fullName, title } = generateName(meta.code, gender);
+  const { firstName, lastName, fullName } = generateName(meta.code, gender);
 
   const city: CityData =
     cities.length > 0
@@ -64,13 +64,15 @@ export function generate(
     lastName,
     fullName,
     gender,
-    title,
     email,
     phone,
     phoneNational,
     dateOfBirth,
     age,
     street: address.street,
+    addressLine1: address.addressLine1,
+    addressLine2: address.addressLine2,
+    addressLine3: address.addressLine3,
     city: address.city,
     region: address.region,
     postal: address.postal,

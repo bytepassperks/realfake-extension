@@ -57,6 +57,18 @@ describe("generate() consistency", () => {
       // Country name appears in the formatted block.
       expect(id.formattedAddress.toLowerCase()).toContain(id.country.toLowerCase());
 
+      // The person's name must appear intact (guards against token-substitution
+      // bugs corrupting letters inside the name, e.g. a surname containing "Z").
+      if (meta.fmt.includes("%N")) expect(id.formattedAddress).toContain(id.fullName);
+      // City/postal appear only when the country's format includes those tokens.
+      if (meta.fmt.includes("%C")) expect(id.formattedAddress).toContain(id.city);
+      if (meta.fmt.includes("%Z") && id.postal) {
+        expect(id.formattedAddress).toContain(id.postal);
+      }
+
+      // Address line 1 is always present and is the street for most countries.
+      expect(id.addressLine1.length).toBeGreaterThan(0);
+
       // Age within default bounds.
       expect(id.age).toBeGreaterThanOrEqual(21);
       expect(id.age).toBeLessThanOrEqual(65);
@@ -113,6 +125,14 @@ describe("gender consistency", () => {
     const female = generate(meta, loadCities("US"), { countryCode: "US", gender: "female" });
     expect(male.gender).toBe("male");
     expect(female.gender).toBe("female");
-    expect(["Mr."]).toContain(male.title);
+  });
+
+  it("never includes a title or Jr/Sr suffix in the name", () => {
+    const meta = getCountry("US")!;
+    for (let i = 0; i < 40; i++) {
+      const id = generate(meta, loadCities("US"), { countryCode: "US" });
+      expect(id.fullName).not.toMatch(/\b(Mr|Mrs|Ms|Miss|Dr|Jr|Sr|II|III|IV)\b\.?/);
+      expect(id.fullName).toBe(`${id.firstName} ${id.lastName}`);
+    }
   });
 });

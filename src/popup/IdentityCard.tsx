@@ -26,10 +26,19 @@ export function IdentityCard({ identity, meta, onCopy, onReroll }: Props): JSX.E
   const zipLabel = capitalize(meta.zipNameType || "postal") + " code";
 
   const fields: FieldDef[] = [
-    { label: "Full name", value: `${identity.title} ${identity.fullName}`, reroll: "name" },
+    { label: "Full name", value: identity.fullName, reroll: "name" },
+    { label: "First name", value: identity.firstName, reroll: "name" },
+    { label: "Last name", value: identity.lastName, reroll: "name" },
     { label: "Gender", value: capitalize(identity.gender) },
     { label: "Email", value: identity.email, reroll: "email", mono: true },
     { label: "Phone", value: identity.phone, reroll: "phone", mono: true },
+    { label: "Address line 1", value: identity.addressLine1, reroll: "address" },
+    ...(identity.addressLine2
+      ? [{ label: "Address line 2", value: identity.addressLine2 } as FieldDef]
+      : []),
+    ...(identity.addressLine3
+      ? [{ label: "Address line 3", value: identity.addressLine3 } as FieldDef]
+      : []),
     { label: "Street", value: identity.street, reroll: "address" },
     { label: "City", value: identity.city },
     ...(identity.region ? [{ label: regionLabel, value: identity.region } as FieldDef] : []),

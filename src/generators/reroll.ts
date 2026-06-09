@@ -1,7 +1,7 @@
 import type { CityData, CountryMeta, Identity } from "./types.ts";
 import { generateName } from "./name.ts";
 import { generatePhone } from "./phone.ts";
-import { buildAddress } from "./address.ts";
+import { buildAddress, formatAddress } from "./address.ts";
 import {
   generateEmail,
   generateUsername,
@@ -38,17 +38,21 @@ export function rerollField(
   const next = { ...identity };
   switch (group) {
     case "name": {
-      const { firstName, lastName, fullName, title } = generateName(meta.code, identity.gender);
+      const { firstName, lastName, fullName } = generateName(meta.code, identity.gender);
       next.firstName = firstName;
       next.lastName = lastName;
       next.fullName = fullName;
-      next.title = title;
       next.email = generateEmail(firstName, lastName);
       next.username = generateUsername(firstName, lastName);
-      // Keep the same city; refresh the formatted block with the new name.
-      const addr = buildAddress(meta, currentCity(identity, cities), fullName);
-      next.formattedAddress = addr.formattedAddress;
-      next.street = addr.street;
+      // Keep the same city; only refresh the name line of the formatted block.
+      next.formattedAddress = formatAddress(meta, {
+        fullName,
+        street: identity.street,
+        city: identity.city,
+        region: identity.region,
+        postal: identity.postal,
+        countryName: identity.country,
+      });
       break;
     }
     case "email":
@@ -64,6 +68,9 @@ export function rerollField(
       const city = cities.length ? pick(cities) : currentCity(identity, cities);
       const addr = buildAddress(meta, city, identity.fullName);
       next.street = addr.street;
+      next.addressLine1 = addr.addressLine1;
+      next.addressLine2 = addr.addressLine2;
+      next.addressLine3 = addr.addressLine3;
       next.city = addr.city;
       next.region = addr.region;
       next.postal = addr.postal;

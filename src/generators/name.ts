@@ -10,23 +10,16 @@ function getFaker(countryCode: string): Faker {
   return allFakers.en;
 }
 
-const TITLES: Record<Gender, string[]> = {
-  male: ["Mr.", "Mr."],
-  female: ["Ms.", "Mrs.", "Miss"],
-};
-
 export function generateName(
   countryCode: string,
   gender: Gender
-): { firstName: string; lastName: string; fullName: string; title: string } {
+): { firstName: string; lastName: string; fullName: string } {
   const faker = getFaker(countryCode);
   const sex = gender === "male" ? "male" : "female";
   const firstName = faker.person.firstName(sex);
   const lastName = faker.person.lastName(sex);
   const fullName = `${firstName} ${lastName}`;
-  const titles = TITLES[gender];
-  const title = titles[Math.floor(Math.random() * titles.length)];
-  return { firstName, lastName, fullName, title };
+  return { firstName, lastName, fullName };
 }
 
 export function generateCompany(countryCode: string): string {

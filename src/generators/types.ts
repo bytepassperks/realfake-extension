@@ -30,13 +30,15 @@ export interface Identity {
   lastName: string;
   fullName: string;
   gender: Gender;
-  title: string;
   email: string;
   phone: string;
   phoneNational: string;
   dateOfBirth: string;
   age: number;
   street: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressLine3: string;
   city: string;
   region: string;
   postal: string;
