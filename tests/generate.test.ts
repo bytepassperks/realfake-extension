@@ -6,6 +6,7 @@ import { COUNTRIES, getCountry } from "../src/data/loader.ts";
 import type { CityData } from "../src/generators/types.ts";
 import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { transliterate } from "transliteration";
+import { JP_NAMES, KO_NAMES, type NameCorpus } from "../src/data/jp-ko-names.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -138,40 +139,69 @@ describe("gender consistency", () => {
   });
 });
 
-describe("email & username are Latin and name-derived for any script", () => {
-  // Countries whose names are written in non-Latin scripts.
-  const NON_LATIN = ["JP", "CN", "KR", "RU", "SA", "GR", "TH", "IN"];
-  const romanize = (s: string) =>
-    transliterate(s)
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]/g, "");
+const clean = (s: string) =>
+  transliterate(s)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
 
-  for (const cc of NON_LATIN) {
+function corpusMap(corpus: NameCorpus): Record<string, string> {
+  const m: Record<string, string> = {};
+  for (const n of [...corpus.surnames, ...corpus.male, ...corpus.female]) {
+    m[n.s] = n.r.toLowerCase();
+  }
+  return m;
+}
+
+function assertHandlesDerived(local: string, username: string, rf: string, rl: string) {
+  // Handles are pure Latin (no leftover native-script characters).
+  expect(local).toMatch(/^[a-z0-9.]+$/);
+  expect(username).toMatch(/^[a-z0-9._]+$/);
+  // Not the bare placeholder fallback (the original bug: "username@…").
+  expect(local).not.toMatch(/^user[._0-9]/);
+  expect(username).not.toMatch(/^user_[0-9]/);
+  // Must be derived from the romanized first or last name.
+  expect(rf.length + rl.length).toBeGreaterThan(0);
+  const derived =
+    (!!rf && (local.includes(rf) || username.includes(rf))) ||
+    (!!rl && (local.includes(rl) || username.includes(rl)));
+  expect(derived).toBe(true);
+}
+
+describe("email & username are Latin and name-derived for any script", () => {
+  // Scripts handled by generic transliteration (Chinese, Cyrillic, Arabic,
+  // Greek, Thai, Devanagari).
+  const TRANSLITERATED = ["CN", "RU", "SA", "GR", "TH", "IN"];
+  for (const cc of TRANSLITERATED) {
     it(`${cc}: email/username are ASCII latin derived from the romanized name`, () => {
       const meta = getCountry(cc)!;
       const cities = loadCities(cc);
       for (let i = 0; i < 15; i++) {
         const id = generate(meta, cities, { countryCode: cc });
-        const local = id.email.split("@")[0];
+        assertHandlesDerived(id.email.split("@")[0], id.username, clean(id.firstName), clean(id.lastName));
+      }
+    });
+  }
 
-        // Handles are pure Latin (no leftover native-script characters).
-        expect(local).toMatch(/^[a-z0-9.]+$/);
-        expect(id.username).toMatch(/^[a-z0-9._]+$/);
-
-        // Not the bare placeholder fallback (the original bug: "username@…").
-        expect(local).not.toMatch(/^user[._0-9]/);
-        expect(id.username).not.toMatch(/^user_[0-9]/);
-
-        // Must be derived from the romanized first or last name.
-        const rf = romanize(id.firstName);
-        const rl = romanize(id.lastName);
-        expect(rf.length + rl.length).toBeGreaterThan(0);
-        const derived =
-          (!!rf && (local.includes(rf) || id.username.includes(rf))) ||
-          (!!rl && (local.includes(rl) || id.username.includes(rl)));
-        expect(derived).toBe(true);
+  // Japanese & Korean use curated native-script ↔ romaji corpora, so the
+  // handle must match the corpus romaji (authentic readings, e.g. 秀雄 →
+  // "hideo" not the Chinese reading "xiuxiong").
+  const CORPUS: Array<[string, NameCorpus]> = [
+    ["JP", JP_NAMES],
+    ["KR", KO_NAMES],
+  ];
+  for (const [cc, corpus] of CORPUS) {
+    it(`${cc}: email/username use authentic corpus romaji`, () => {
+      const map = corpusMap(corpus);
+      const meta = getCountry(cc)!;
+      const cities = loadCities(cc);
+      for (let i = 0; i < 20; i++) {
+        const id = generate(meta, cities, { countryCode: cc });
+        // The generated name parts must exist in the corpus.
+        expect(map[id.firstName]).toBeTruthy();
+        expect(map[id.lastName]).toBeTruthy();
+        assertHandlesDerived(id.email.split("@")[0], id.username, map[id.firstName], map[id.lastName]);
       }
     });
   }

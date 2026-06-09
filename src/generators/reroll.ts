@@ -38,12 +38,17 @@ export function rerollField(
   const next = { ...identity };
   switch (group) {
     case "name": {
-      const { firstName, lastName, fullName } = generateName(meta.code, identity.gender);
+      const { firstName, lastName, fullName, latinFirst, latinLast } = generateName(
+        meta.code,
+        identity.gender
+      );
       next.firstName = firstName;
       next.lastName = lastName;
       next.fullName = fullName;
-      next.email = generateEmail(firstName, lastName);
-      next.username = generateUsername(firstName, lastName);
+      next.latinFirst = latinFirst;
+      next.latinLast = latinLast;
+      next.email = generateEmail(latinFirst, latinLast);
+      next.username = generateUsername(latinFirst, latinLast);
       // Keep the same city; only refresh the name line of the formatted block.
       next.formattedAddress = formatAddress(meta, {
         fullName,
@@ -56,7 +61,7 @@ export function rerollField(
       break;
     }
     case "email":
-      next.email = generateEmail(identity.firstName, identity.lastName);
+      next.email = generateEmail(identity.latinFirst, identity.latinLast);
       break;
     case "phone": {
       const { phone, phoneNational } = generatePhone(meta.code);
@@ -91,7 +96,7 @@ export function rerollField(
       break;
     }
     case "username":
-      next.username = generateUsername(identity.firstName, identity.lastName);
+      next.username = generateUsername(identity.latinFirst, identity.latinLast);
       break;
     case "password":
       next.password = generatePassword();

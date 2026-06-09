@@ -1,22 +1,7 @@
-import { transliterate } from "transliteration";
+import { latinize } from "./latin.ts";
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/**
- * Romanize a name from any script (Japanese, Chinese, Korean, Cyrillic,
- * Arabic, Greek, Thai, Devanagari, Hebrew, …) into a lowercase [a-z0-9] handle
- * suitable for emails/usernames. This keeps the displayed name in its native
- * script while ensuring derived handles are real-looking Latin text rather
- * than gibberish/placeholder fallbacks.
- */
-function latinize(s: string): string {
-  return transliterate(s ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
 }
 
 function pad(n: number, len: number): string {

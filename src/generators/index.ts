@@ -38,7 +38,7 @@ export function generate(
   options: GenerateOptions
 ): Identity {
   const gender: Gender = options.gender ?? (Math.random() < 0.5 ? "male" : "female");
-  const { firstName, lastName, fullName } = generateName(meta.code, gender);
+  const { firstName, lastName, fullName, latinFirst, latinLast } = generateName(meta.code, gender);
 
   const city: CityData =
     cities.length > 0
@@ -56,13 +56,15 @@ export function generate(
   const address = buildAddress(meta, city, fullName);
   const { phone, phoneNational } = generatePhone(meta.code);
   const { dateOfBirth, age } = generateDOB(options.minAge, options.maxAge);
-  const email = generateEmail(firstName, lastName);
+  const email = generateEmail(latinFirst, latinLast);
   const card = generateCreditCard();
 
   return {
     firstName,
     lastName,
     fullName,
+    latinFirst,
+    latinLast,
     gender,
     email,
     phone,
@@ -86,7 +88,7 @@ export function generate(
     creditCard: card.number,
     creditCardExpiry: card.expiry,
     creditCardCVV: card.cvv,
-    username: generateUsername(firstName, lastName),
+    username: generateUsername(latinFirst, latinLast),
     password: generatePassword(),
     company: generateCompany(meta.code),
     jobTitle: generateJobTitle(meta.code),

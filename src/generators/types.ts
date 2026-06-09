@@ -29,6 +29,9 @@ export interface Identity {
   firstName: string;
   lastName: string;
   fullName: string;
+  /** Romanized given/family name (drives email/username); not displayed. */
+  latinFirst: string;
+  latinLast: string;
   gender: Gender;
   email: string;
   phone: string;
