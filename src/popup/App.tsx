@@ -219,15 +219,6 @@ export function App(): JSX.Element {
 
       <IdentityCard identity={identity} meta={meta} onCopy={copy} onReroll={onReroll} />
 
-      <footer className="footer">
-        <p className="disclaimer">
-          All data is fictional and for testing/privacy only. It does not refer to any real
-          person. IDs use reserved ranges; cards are Luhn-valid TEST numbers. Generated 100%
-          locally on your device.
-        </p>
-        <p className="coverage">{COUNTRIES.length} countries · real city/region/postal data</p>
-      </footer>
-
       {toast && <div className="toast">{toast}</div>}
     </div>
   );
