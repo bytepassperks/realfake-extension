@@ -5,6 +5,7 @@ import { generate } from "../src/generators/index.ts";
 import { COUNTRIES, getCountry } from "../src/data/loader.ts";
 import type { CityData } from "../src/generators/types.ts";
 import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
+import { transliterate } from "transliteration";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -135,4 +136,43 @@ describe("gender consistency", () => {
       expect(id.fullName).toBe(`${id.firstName} ${id.lastName}`);
     }
   });
+});
+
+describe("email & username are Latin and name-derived for any script", () => {
+  // Countries whose names are written in non-Latin scripts.
+  const NON_LATIN = ["JP", "CN", "KR", "RU", "SA", "GR", "TH", "IN"];
+  const romanize = (s: string) =>
+    transliterate(s)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+  for (const cc of NON_LATIN) {
+    it(`${cc}: email/username are ASCII latin derived from the romanized name`, () => {
+      const meta = getCountry(cc)!;
+      const cities = loadCities(cc);
+      for (let i = 0; i < 15; i++) {
+        const id = generate(meta, cities, { countryCode: cc });
+        const local = id.email.split("@")[0];
+
+        // Handles are pure Latin (no leftover native-script characters).
+        expect(local).toMatch(/^[a-z0-9.]+$/);
+        expect(id.username).toMatch(/^[a-z0-9._]+$/);
+
+        // Not the bare placeholder fallback (the original bug: "username@…").
+        expect(local).not.toMatch(/^user[._0-9]/);
+        expect(id.username).not.toMatch(/^user_[0-9]/);
+
+        // Must be derived from the romanized first or last name.
+        const rf = romanize(id.firstName);
+        const rl = romanize(id.lastName);
+        expect(rf.length + rl.length).toBeGreaterThan(0);
+        const derived =
+          (!!rf && (local.includes(rf) || id.username.includes(rf))) ||
+          (!!rl && (local.includes(rl) || id.username.includes(rl)));
+        expect(derived).toBe(true);
+      }
+    });
+  }
 });

@@ -1,5 +1,22 @@
+import { transliterate } from "transliteration";
+
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Romanize a name from any script (Japanese, Chinese, Korean, Cyrillic,
+ * Arabic, Greek, Thai, Devanagari, Hebrew, …) into a lowercase [a-z0-9] handle
+ * suitable for emails/usernames. This keeps the displayed name in its native
+ * script while ensuring derived handles are real-looking Latin text rather
+ * than gibberish/placeholder fallbacks.
+ */
+function latinize(s: string): string {
+  return transliterate(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function pad(n: number, len: number): string {
@@ -19,14 +36,18 @@ export function generateDOB(minAge = 21, maxAge = 65): { dateOfBirth: string; ag
 const EMAIL_DOMAINS = ["gmail.com", "outlook.com", "yahoo.com", "proton.me", "icloud.com"];
 
 export function generateEmail(firstName: string, lastName: string): string {
-  const clean = (s: string) =>
-    s
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]/g, "");
-  const f = clean(firstName) || "user";
-  const l = clean(lastName) || "name";
+  let f = latinize(firstName);
+  let l = latinize(lastName);
+  // If a name romanizes to nothing (e.g. unusual glyphs), keep the email
+  // name-derived by reusing whichever part survived rather than a placeholder.
+  if (!f && !l) {
+    f = "user";
+    l = `${randInt(1000, 99999)}`;
+  } else if (!f) {
+    f = l;
+  } else if (!l) {
+    l = f;
+  }
   const domain = EMAIL_DOMAINS[randInt(0, EMAIL_DOMAINS.length - 1)];
   const patterns = [
     `${f}.${l}`,
@@ -39,14 +60,16 @@ export function generateEmail(firstName: string, lastName: string): string {
 }
 
 export function generateUsername(firstName: string, lastName: string): string {
-  const clean = (s: string) =>
-    s
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]/g, "");
-  const f = clean(firstName) || "user";
-  const l = clean(lastName) || "x";
+  let f = latinize(firstName);
+  let l = latinize(lastName);
+  if (!f && !l) {
+    f = "user";
+    l = `${randInt(1000, 99999)}`;
+  } else if (!f) {
+    f = l;
+  } else if (!l) {
+    l = f;
+  }
   return `${f}_${l}${randInt(1, 999)}`;
 }
 
